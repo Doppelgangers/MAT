@@ -1,0 +1,7 @@
+from keyboards.menu_kb import kb_main_menu
+from keyboards.close_kb import kb_close
+from keyboards.activity_kb import kb_activity
+from keyboards.actions_kb import kb_actions
+from keyboards.setings_proxy_kb import kb_settings_proxy
+from keyboards.settings_twitter_kb import kb_settings_twitter
+from keyboards.settings_profile import kb_settings_profile
