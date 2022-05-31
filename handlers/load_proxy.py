@@ -23,8 +23,8 @@ async def add_proxy(mesage: types.Message):
 async def load_proxy(mesage: types.Message, state: FSMContext):
     good_proxy = 0
     bed_proxy = 0
-    exists_proxy = 0
     bed_list = []
+    query = []
 
     file = await bot.get_file(mesage.document.file_id)
     download_file = await bot.download_file(file.file_path)
@@ -39,25 +39,19 @@ async def load_proxy(mesage: types.Message, state: FSMContext):
             log, pas = aut.split(':')
             ip, port = prox.split(':')
             if ip.count(".") == 3 and port.isdigit():
-
-                added = await sql_db.set_proxy(log, pas, ip, port)
-
-                if added:
-                    print('Добавил адрес', ip, port, log, pas)
                     good_proxy += 1
-                else:
-                    print('Повторное значение', ip, port, log, pas)
-                    exists_proxy += 1
-
+                    query.append( [log, pas ,ip, port] )
             else:
                 bed_proxy += 1
                 bed_list.append(line)
                 print('Несмог загрузить ', line)
 
+        try:
+            await sql_db.set_proxy(query)
+        except:
+            await bot.send_message(mesage.chat.id, "Во время загрузки файла произашла ошибка")
+            return
         answere = f"Успешно загруженно {good_proxy} прокси.\n\n"
-
-        if exists_proxy > 0:
-            answere += f'Ранее добавленные прокси: {exists_proxy} \n\n'
 
         if bed_proxy > 0:
             answere += f'Неудалось загрузить {bed_proxy} прокси.\n'
