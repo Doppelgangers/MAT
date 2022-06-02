@@ -13,6 +13,10 @@ class FSM_load_proxy(StatesGroup):
     proxy_list = State()
 
 
+async def link_poxys(mesage: types.Message):
+    added = await sql_db.link_proxy_for_twitters()
+    await bot.send_message( mesage.chat.id , f"Связал {added} прокси." )
+
 # Запросим файл
 async def add_proxy(mesage: types.Message):
     await FSM_load_proxy.proxy_list.set()
@@ -70,3 +74,4 @@ async def load_proxy(mesage: types.Message, state: FSMContext):
 def reg_handler_load_proxy(dp: Dispatcher):
     dp.register_message_handler(add_proxy, Text(equals="Загрузить прокси", ignore_case=True), state=None)
     dp.register_message_handler(load_proxy, content_types=['document'], state=FSM_load_proxy.proxy_list)
+    dp.register_message_handler(link_poxys , Text(equals="Привязать к прокси" , ignore_case=True) )
