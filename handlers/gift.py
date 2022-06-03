@@ -1,3 +1,5 @@
+import json
+
 from aiogram import types , Dispatcher
 from  create_bot import  dp , bot
 from aiogram.dispatcher.filters import Text
@@ -45,11 +47,19 @@ async def load_mesage(mesage : types.Message , state:FSMContext):
         mes = f"Учайтие в гиве успешно созданно! \n\n {data['link']} \n\n Количество тегов: {data['tags']} \n\n "
         if data['mesage'] == '0':
             mes += 'Дополнительного сообщения нет'
+            data['mesage'] = ''
         else:
             mes += f'Дополнительное сообщение: {data["mesage"]}'
         await bot.send_message(mesage.chat.id, mes , reply_markup=kb_activity)
 
+    task = { 'function' : 'gift' ,  'arguments' : [ data['link'] , data['tags'] , data['mesage'] ]  }
+    task = json.dumps (task)
+    await sql_db.add_task(task)
+
+
     await state.finish()
+
+
 
 
 

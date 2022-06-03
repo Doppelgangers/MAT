@@ -51,8 +51,48 @@ async def link_proxy_for_twitters ():
 
     return len(command)
 
+async def add_task (json_task):
+    cur.execute("""
+    INSERT INTO tasks (
+                      id,
+                      json
+                  )
+                  VALUES (
+                      ? , 
+                      ? 
+                  );
+    """ , (None , json_task ) )
+    base.commit()
 
+def get_tasks ():
+    feedback = cur.execute('SELECT * FROM tasks where tasks.status = 1 LIMIT 1').fetchall()
+    return feedback
 
+def del_task_for_id (id):
+    cur.execute(f'DELETE FROM tasks WHERE id = ( {id} ) ')
+    base.commit()
+
+def disable_task (id):
+    cur.execute(f"UPDATE tasks SET  status = '0' WHERE id = {id} ")
+    base.commit()
+
+def get_all_active_akkaunt_data ():
+    data = cur.execute("""
+    SELECT proxys.login as 'proxy_login' ,
+    proxys.password as 'proxy_pasword' ,
+    proxys.proxy as 'proxy_ip',
+    proxys.port as 'proxy_port' ,
+    twitters.email_or_phone as 'twitter_login' ,
+    twitters.password as 'twitter_password' ,
+    twitters.login as 'twitter_tag'
+    FROM proxys
+    JOIN
+    proxys_twitters ON proxys_twitters.proxy = proxys.id and proxys.is_active = 1
+    JOIN
+    twitters ON proxys_twitters.twitter = twitters.id and twitters.status = 1
+    ORDER BY proxys.id ASC;
+    """).fetchall()
+    return data
 
 
 

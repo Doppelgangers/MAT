@@ -1,16 +1,23 @@
+import json
 import time
 
 from data_base import sql_db
 
 
 sql_db.sql_start()
-#
+print( sql_db.disable_task(2)  )
+# #
 # while True:
-#     print('\n'*20)
-#     print(sql_db.get_proxy())
+#     task = sql_db.get_tasks()
+#     if task:
+#         array_task = json.loads( task[0][1] )
+#         print( array_task['function'] , '\n' , array_task['arguments'] )
+#         sql_db.del_task_for_id(task[0][0])
+#         break
 #     time.sleep(1)
 
-sql_db.lin_proxy_for_twitters()
+
+
 
 # proxys_list = [['01'], ['02'] , ['03'] , ['04']]
 # twitters_list  = [[1], [2], [3], [4], [5], [6], [7], [8], [9], [10], [11], [12], [13], [14], [15], [16], [17]]

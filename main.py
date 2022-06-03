@@ -5,6 +5,9 @@ import os.path
 import pickle
 import requests
 
+from data_base import sql_db
+
+
 # import logging
 # logging.basicConfig(level=logging.DEBUG)
 
@@ -266,27 +269,80 @@ def task_parser(proxy_username="c0BRFK", proxy_password="QNNZN4Vp1m", proxy_ip="
     tweeter = AccauntTwiter( proxy_username=proxy_username, proxy_password=proxy_password, proxy_ip=proxy_ip,proxy_port=proxy_port  )
     tweeter.brower.get('http://2ip.ru')
 
+def make_a_gift( array_task , proxy_login ,proxy_password , proxy_ip , proxy_port , twitter_login , twitter_password , twitter_tag):
+    proxy = f'http://{proxy_login}:{proxy_password}@{proxy_ip}:{proxy_port}'
+    if check_proxy(proxy):
+        tw = AccauntTwiter ( proxy_username=proxy_login, proxy_password=proxy_password, proxy_ip=proxy_ip,proxy_port=proxy_port  )
+        tw.login_twiter(tw_login='akkayntmager@gmail.com', tw_password='passwordtwinkoFarmer')
+        print(array_task[0])
+        tw.open_tweet(array_task[0])
+        time.sleep(3)
+        tw.like()
+        tw.retweet()
+        time.sleep(10)
+        tw.cls_broser()
 
+
+
+def gift (  ):
+    pass
 
 def main():
+    sql_db.sql_start()
+
+    #Вечный цикл
+    while True:
+
+        #Ищем задания
+        while True:
+            task = sql_db.get_tasks()
+            print("Поиск заданий")
+            if task:
+                array_task = json.loads(task[0][1])
+                task_id = task[0][0]
+                sql_db.disable_task(task_id)
+
+
+                # print(array_task['function'], '\n', array_task['arguments'])
+
+                print('Обрабатываф запрос ' , array_task['function'] )
+                break
+            time.sleep(1)
+
+        iter_data = sql_db.get_all_active_akkaunt_data()
+
+        #Добавляем к списку аккаунтов задания для итерации в мультипроцессинге
+        for i in range(len(iter_data)):
+            iter_data[i] =   ( array_task['arguments'] ,) + iter_data[i]
+
+        print(iter_data)
+
+        match array_task['function'] :
+            case 'gift':
+                with Pool(processes=multiprocessing.cpu_count()) as pool_process:
+                    pool_process.starmap( make_a_gift , iter_data )
+            case _:
+                pass
+
+
+
 
     # with Pool(processes=multiprocessing.cpu_count()) as pool_process:
     #     pool_process.starmap( task_parser , [ (),() ] )
-    # iterable_list  = ['109.248.55.221:5500:c0BRFK:QNNZN4Vp1m:akkayntmager@gmail.com:passwordtwinkoFarmer:ot#https://twitter.com/elonmusk/status/1519377424437243904:#like#retweet']
-    #
+   #
     # p = Pool(2)
     # p.starmap(task_parser , [ ('kSJLd7' , '01r375' , '196.19.158.205' ,8000), ('c0BRFK' , 'QNNZN4Vp1m' , '109.248.55.221' ,5500)] )
     # p.close()
 
-    tw = AccauntTwiter(proxy_username="c0BRFK", proxy_password="QNNZN4Vp1m", proxy_ip="109.248.55.221",proxy_port=5500)
-    if check_proxy(tw.brower.proxy['http']):
-        tw.login_twiter(tw_login='akkayntmager@gmail.com', tw_password='passwordtwinkoFarmer')
-        tw.open_tweet('https://twitter.com/elonmusk/status/1530291267652898816')
-        time.sleep(3)
-        tw.like()
-        tw.retweet()
-        time.sleep(20000)
-        tw.cls_broser()
+    # tw = AccauntTwiter(proxy_username="c0BRFK", proxy_password="QNNZN4Vp1m", proxy_ip="109.248.55.221",proxy_port=5500)
+    # if check_proxy(tw.brower.proxy['http']):
+    #     tw.login_twiter(tw_login='akkayntmager@gmail.com', tw_password='passwordtwinkoFarmer')
+    #     tw.open_tweet('https://twitter.com/elonmusk/status/1530291267652898816')
+    #     time.sleep(3)
+    #     tw.like()
+    #     tw.retweet()
+    #     time.sleep(20000)
+    #     tw.cls_broser()
 
 
 if __name__ == '__main__':
