@@ -64,16 +64,12 @@ async def add_task (json_task):
     """ , (None , json_task ) )
     base.commit()
 
-def get_tasks ():
+def get_task ():
     feedback = cur.execute('SELECT * FROM tasks where tasks.status = 1 LIMIT 1').fetchall()
     return feedback
 
-def del_task_for_id (id):
-    cur.execute(f'DELETE FROM tasks WHERE id = ( {id} ) ')
-    base.commit()
-
-def disable_task (id):
-    cur.execute(f"UPDATE tasks SET  status = '0' WHERE id = {id} ")
+def set_task_status (id , new_status):
+    cur.execute(f"UPDATE tasks SET  status = {new_status} WHERE id = {id} ")
     base.commit()
 
 def get_all_active_akkaunt_data ():
