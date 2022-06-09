@@ -232,25 +232,27 @@ class AccauntTwiter:
         except:
             print('Ретвит неудался или уже был сделан')
 
-    def comment(self):
+    def comment(self , text = ''):
         try:
             tweet = self.brower.find_element(By.CSS_SELECTOR, 'article')
             tweet.find_element(By.CSS_SELECTOR, 'div[data-testid="reply"]').click()
+            #Ждём загрузки модального окна
             area = WebDriverWait(self.brower, 5).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, 'div[aria-labelledby="modal-header"]'))
             )
-
+            #ждём загрузки поля ввода сообщения (определяем по полю со смайликом)
             load_mesage_area = WebDriverWait(self.brower, 5).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, 'div[aria-controls="typeaheadDropdownWrapped-0"]'))
+                EC.presence_of_element_located((By.CSS_SELECTOR , 'div[aria-autocomplete="list"]'))
             )
-            load_mesage_area.send_keys('wow')
+            load_mesage_area.send_keys(text)
             # area.find_element(By.CSS_SELECTOR , 'div[data-testid="tweetTextarea_0"]')
-            time.sleep(0.1)
+            time.sleep(0.2)
             otvet = area.find_element(By.CSS_SELECTOR , 'div[data-testid="tweetButton"]' )
             otvet.click()
             print('Успешный комент')
         except Exception as e:
             print('ошибка во время коментария ' ,e)
+
 
     def unretweet(self):
         try:
@@ -328,9 +330,10 @@ def main():
     tw.create_browser()
     if tw.login_twiter('akkayntmager@gmail.com', 'passwordtwinkoFarmer'):
         tw.open_tweet('https://twitter.com/elonmusk/status/1531647849599057921')
-        tw.comment()
+
         tw.like()
         tw.retweet()
+        tw.comment( 'very interesting)(' )
     time.sleep(10000)
 
 if __name__ == '__main__':
