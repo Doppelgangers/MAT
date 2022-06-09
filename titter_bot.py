@@ -232,17 +232,25 @@ class AccauntTwiter:
         except:
             print('Ретвит неудался или уже был сделан')
 
-    # def comment(self):
-    #     try:
-    #         tweet = self.brower.find_element(By.CSS_SELECTOR, 'article')
-    #         tweet.find_element(By.CSS_SELECTOR, 'div[data-testid="reply"]').click()
-    #         time.sleep(0.4)
-    #         area = self.brower.find_element(By.CSS_SELECTOR, 'div[data-testid="tweetTextarea_0_label"]').click()
-    #         area.send_keys('123')
-    #         time.sleep(10000)
-    #         print('Успешный комент')
-    #     except:
-    #         print('Ретвит неудался или уже был сделан')
+    def comment(self):
+        try:
+            tweet = self.brower.find_element(By.CSS_SELECTOR, 'article')
+            tweet.find_element(By.CSS_SELECTOR, 'div[data-testid="reply"]').click()
+            area = WebDriverWait(self.brower, 5).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, 'div[aria-labelledby="modal-header"]'))
+            )
+
+            load_mesage_area = WebDriverWait(self.brower, 5).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, 'div[aria-controls="typeaheadDropdownWrapped-0"]'))
+            )
+            load_mesage_area.send_keys('wow')
+            # area.find_element(By.CSS_SELECTOR , 'div[data-testid="tweetTextarea_0"]')
+            time.sleep(0.1)
+            otvet = area.find_element(By.CSS_SELECTOR , 'div[data-testid="tweetButton"]' )
+            otvet.click()
+            print('Успешный комент')
+        except Exception as e:
+            print('ошибка во время коментария ' ,e)
 
     def unretweet(self):
         try:
@@ -321,6 +329,8 @@ def main():
     if tw.login_twiter('akkayntmager@gmail.com', 'passwordtwinkoFarmer'):
         tw.open_tweet('https://twitter.com/elonmusk/status/1531647849599057921')
         tw.comment()
+        tw.like()
+        tw.retweet()
     time.sleep(10000)
 
 if __name__ == '__main__':
