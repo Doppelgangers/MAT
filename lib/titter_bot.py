@@ -12,49 +12,48 @@ from configs import *
 
 class AccauntTwiter:
 
-    def __init__(self):
-        pass
-
-    def create_browser(self):
+    def __init__(self , off_image = True , bacground_mode=False):
         self.worked = True
-        chrome_options = webdriver.ChromeOptions()
-        prefs = {"profile.managed_default_content_settings.images": 2}
-        chrome_options.add_experimental_option("prefs", prefs)
+        # Отключаем отображение изображений для оптимизации и так медленых прокси
+        self.chrome_options = webdriver.ChromeOptions()
 
-        # В фоновый режим
-        # chrome_options.headless = True
+        if off_image:
+            prefs = {"profile.managed_default_content_settings.images": 2}
+            self.chrome_options.add_experimental_option("prefs", prefs)
 
-        caps = DesiredCapabilities().CHROME
+        self.chrome_options.add_argument("--ignore-certificate-errors")
+        self.chrome_options.add_argument("--disable-popup-blocking")
+        # self.chrome_options.add_argument("--incognito")
+
+
+
+        # Прячем вебдрайвер
+        self.chrome_options.add_argument("--disable-blink-features=AutomationControlled")
+        # отключаем уведомления
+        self.chrome_options.add_argument('--disable-notifications')
+
+        if bacground_mode:
+            # В фоновый режим
+            self.chrome_options.headless = True
+
+
+        self.caps = DesiredCapabilities().CHROME
         # caps["pageLoadStrategy"] = "normal"  # complete (полная загрузка страницы)
         # caps["pageLoadStrategy"] = "eager"  #  interactive
-        caps["pageLoadStrategy"] = "none"
+        self.caps["pageLoadStrategy"] = "none"
 
+    def create_browser(self ):
         # Создаём браузер
-        self.brower = webdriver.Chrome(executable_path=PATCH_DRIVER, chrome_options=chrome_options, desired_capabilities=caps)
+        self.brower = webdriver.Chrome(executable_path=PATCH_DRIVER, chrome_options=self.chrome_options, desired_capabilities=self.caps)
 
 
     def create_proxy_browser(self, proxy_username, proxy_password, proxy_ip, proxy_port):
-        self.worked = True
-        # Отключаем отображение изображений для оптимизации и так медленых прокси
-        chrome_options = webdriver.ChromeOptions()
-        prefs = {"profile.managed_default_content_settings.images": 2}
-        chrome_options.add_experimental_option("prefs", prefs)
-
-        #В фоновый режим
-        # chrome_options.headless = True
-
         # Настраиваем прокси
         seleniumwire_options = {
             "proxy": {"http": f"http://{proxy_username}:{proxy_password}@{proxy_ip}:{proxy_port}", "verify_ssl": False}}
-
-        caps = DesiredCapabilities().CHROME
-        # caps["pageLoadStrategy"] = "normal"  # complete (полная загрузка страницы)
-        # caps["pageLoadStrategy"] = "eager"  #  interactive
-        caps["pageLoadStrategy"] = "none"
-
         # Создаём браузер
         self.brower = webdriver.Chrome(executable_path=PATCH_DRIVER, seleniumwire_options=seleniumwire_options,
-                                       chrome_options=chrome_options, desired_capabilities=caps)
+                                       chrome_options=self.chrome_options, desired_capabilities=self.caps)
 
     def cls_broser(self):
         # При вызове этой функции закрывается текущий браузер
@@ -107,10 +106,9 @@ class AccauntTwiter:
             time.sleep(0.05)
         time.sleep(0.4)
         inputPas.send_keys(Keys.ENTER)
-        time.sleep(0.4)
 
         #Проверка успешности входа
-        if self.authorization_verification():
+        if self.authorization_verification(refrash=False):
             return True
         else:
 
@@ -125,8 +123,6 @@ class AccauntTwiter:
                 self.enter_for_password(login=login, password=password, second_enter=True , refrash=False)
             except:
                 return False
-
-
 
     def enter_for_cookies(self, login , second_enter = False):
 
@@ -159,18 +155,17 @@ class AccauntTwiter:
             return False
 
         #Проверка входа (если появилась аватарка на главной странице)
-
+        print('проверка входа')
         if self.authorization_verification():
             return True
         else:
             print("Не удалось авторизоваться по куки")
             return False
 
-
     def open_tweet(self, url , second_enter = False):
         self.brower.get(url)
         try:
-            element = WebDriverWait(self.brower, 20).until(
+            WebDriverWait(self.brower, 20).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, 'h2[role = "heading"]'))
             )
             print('TARGER твит')
@@ -182,7 +177,7 @@ class AccauntTwiter:
                 print('Вторая попытка открыть твит ')
                 self.open_tweet(url=url , second_enter=True)
         try:
-            element = WebDriverWait(self.brower, 20).until(
+            WebDriverWait(self.brower, 20).until(
                 EC.presence_of_element_located((By.TAG_NAME, 'article'))
             )
             print('TARGER содержимое твита')
@@ -201,17 +196,20 @@ class AccauntTwiter:
             print('Старые куки удалены')
 
     def create_cookie(self, login , refresh = False):
-        #Удаляем старык куки
+        #Удаляем старые куки
         self.delete_cookie(login=login)
         #Создаём куки
         print('куки записываюстя')
         try:
             pickle.dump(self.brower.get_cookies(), open(f'{PATCH_COOKIES}{login}__cookies', 'wb'))
             print('куки записаны')
+            return True
         #Если возникла ошибка при записи повторить попытку
         except:
+
             if refresh:
-                print("Куки не ужалось записать уже дважды!")
+                print("Куки не удалось  уже дважды!")
+                return False
             else:
                 print('Во время созранения куки возникла ,ошибка вторая попытка')
                 self.create_cookie(login=login , refresh=True)
@@ -222,66 +220,122 @@ class AccauntTwiter:
         else:
             return False
 
+    def subscribe(self ,link):
+        try:
+            self.brower.get(link)
+            btn = WebDriverWait(self.brower, 20).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, 'div[data-testid="placementTracking"] div[role="button"]'))
+            )
+            trash , status = btn.get_attribute('data-testid').split('-')
+            match status:
+                case 'follow':
+                    btn.click()
+                    time.sleep(0.05)
+                    print('Подписался')
+                    return True
+                case 'unfollow':
+                    print('Был подписан')
+                    return True
+                case _:
+                    print('ошибка в данных')
+                    return False
+        except Exception as e:
+            print('Возникла ошибка')
+            return False
+
+
     def retweet(self):
         try:
             tweet = self.brower.find_element(By.CSS_SELECTOR, 'article')
             tweet.find_element(By.CSS_SELECTOR, 'div[data-testid="retweet"]').click()
-            time.sleep(0.4)
-            self.brower.find_element(By.CSS_SELECTOR, 'div[data-testid="retweetConfirm"]').click()
+            confirm_retweet  = WebDriverWait(self.brower, 5).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, 'div[data-testid="retweetConfirm"]'))
+            )
+            confirm_retweet.click()
             print('Успешный ретвит')
+            return True
         except:
-            print('Ретвит неудался или уже был сделан')
 
-    def comment(self , text = ''):
+            try:
+                tweet.find_element(By.CSS_SELECTOR, 'div[data-testid="unretweet"]')
+                print("Ретвит уже был сделан")
+                return True
+            except Exception as e:
+                print('Ретвит неудался' , e)
+                return False
+
+    def comment(self , text , file = ''):
         try:
             tweet = self.brower.find_element(By.CSS_SELECTOR, 'article')
             tweet.find_element(By.CSS_SELECTOR, 'div[data-testid="reply"]').click()
-            #Ждём загрузки модального окна
-            area = WebDriverWait(self.brower, 5).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, 'div[aria-labelledby="modal-header"]'))
+
+            # Ждём загрузки поля сообщения
+            text_area = WebDriverWait(self.brower, 10).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, 'div[aria-labelledby="modal-header"] div[role="textbox"]'))
             )
-            #ждём загрузки поля ввода сообщения (определяем по полю со смайликом)
-            load_mesage_area = WebDriverWait(self.brower, 5).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR , 'div[aria-autocomplete="list"]'))
+
+            #ввод текста
+            text_area.send_keys(text)
+
+            #ЕСЛИ НУЖНО ЗАГРУЗИТЬ ФАЙЛ
+            if file:
+                self.brower.find_element(By.CSS_SELECTOR, 'input[data-testid="fileInput"]').send_keys(file)
+
+                try:
+                    WebDriverWait(self.brower, 10).until(
+                        EC.presence_of_element_located((By.CSS_SELECTOR, 'div[data-testid="attachments"]'))
+                    )
+                    print('Файл загружен')
+                except:
+                    print('Файл НЕ загружен')
+
+
+            commit = WebDriverWait(self.brower, 10).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, 'div[data-testid="tweetButton"]:not(div[aria-disabled="true"])'))
             )
-            load_mesage_area.send_keys(text)
-            # area.find_element(By.CSS_SELECTOR , 'div[data-testid="tweetTextarea_0"]')
-            time.sleep(0.2)
-            otvet = area.find_element(By.CSS_SELECTOR , 'div[data-testid="tweetButton"]' )
-            otvet.click()
+            commit.click()
+
+            WebDriverWait(self.brower, 10).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, 'div[role="alert"]'))
+            )
+
             print('Успешный комент')
+            return True
         except Exception as e:
             print('ошибка во время коментария ' ,e)
-
-
-    def unretweet(self):
-        try:
-            tweet = self.brower.find_element(By.TAG_NAME, 'article')
-            tweet.find_element(By.CSS_SELECTOR, 'div[data-testid="unretweet"]').click()
-            time.sleep(0.4)
-            self.brower.find_element(By.CSS_SELECTOR, 'div[data-testid="unretweetConfirm"]').click()
-            print('Ретивит отменён')
-        except:
-            print('Ретвит неудалось отменить')
+            return False
 
     def like(self):
         try:
             tweet = self.brower.find_element(By.CSS_SELECTOR, 'article')
             tweet.find_element(By.CSS_SELECTOR, 'div[data-testid="like"]').click()
             print("Лайкнул")
+            return True
+
         except:
-            print("Лайк не удался")
 
+            try:
+                tweet.find_element(By.CSS_SELECTOR, 'div[data-testid="unlike"]')
+                print("лайк уже стоит")
+                return True
+            except Exception as e:
+                print("Лайк не удался " , e)
+                return False
 
-    def unlike(self):
+    def accept_cookies(self):
+        """
+        Бывает появляется окно с просьбой подтвердить использование куки , что мешаст ставить работать с постами
+        """
         try:
-            tweet = self.brower.find_element(By.CSS_SELECTOR, 'article')
-            tweet.find_element(By.CSS_SELECTOR, 'div[data-testid="unlike"]').click()
-            print("Убрал лайк")
+            self.brower.find_element(By.XPATH , '//*[@id="layers"]/div/div/div/div/div/div[2]/div[1]' ).click()
+            return True
         except:
-            print("Лайк не удалось снять или уже был снят")
+            return False
 
-    def login_twiter(self, tw_login='', tw_password='', flag_used_cookies=True, second_enter=False):
+
+
+
+    def login_twiter(self, tw_login='', tw_password='', flag_used_cookies=True):
         # Если есть куки пытаемя войти с их помощью
         if (self.check_cookies(login=tw_login) and flag_used_cookies ):
 
@@ -294,18 +348,14 @@ class AccauntTwiter:
 
         else:
             # Если куки в файлах нет авторизуемя и создаём куки
-
                 # Авторизуемся по поролю
             if self.enter_for_password(login=tw_login, password=tw_password):
-                    # Создаём куки
-                    self.create_cookie(tw_login)
+                # Создаём куки
+                self.create_cookie(tw_login)
+                return True
             else:
-                if second_enter:
-                    print('Дважды не удалось войти, аккаунт добавлен в архив')
-                    return False
-                else:
-                    print('Попытка второго входа')
-                    self.login_twiter(tw_login=tw_login, tw_password=tw_password, flag_used_cookies=False , second_enter=True)
+                print('Не удалось войти')
+                return False
 
     def authorization_verification(self, second_enter=False , refrash = True):
         if refrash:
@@ -324,17 +374,26 @@ class AccauntTwiter:
                 print('Вторая попытка провеоки входа')
                 self.authorization_verification(second_enter=True)
 
-
 def main():
-    tw = AccauntTwiter()
+
+    tw = AccauntTwiter(off_image=False , bacground_mode=False)
     tw.create_browser()
+    # tw.brower.get('https://bot.sannysoft.com')
+    # time.sleep(10000)
     if tw.login_twiter('akkayntmager@gmail.com', 'passwordtwinkoFarmer'):
-        tw.open_tweet('https://twitter.com/elonmusk/status/1531647849599057921')
+        tw.subscribe('https://twitter.com/elonmusk')
+        # tw.open_tweet('https://twitter.com/elonmusk/status/1531647849599057921')
+        # tw.open_tweet('https://twitter.com/binance/status/1535895825246785536')
+        tw.accept_cookies()
 
-        tw.like()
-        tw.retweet()
-        tw.comment( 'very interesting)(' )
-    time.sleep(10000)
+        res  = []
 
+        # res.append(tw.like())
+        # res.append(tw.retweet())
+        # res.append(tw.comment(text='i like this post)' ,file=os.getcwd()+'/tes.png'))
+        # tw.brower.find_element(By.TAG_NAME , 'body').screenshot('tester.png')
+        print( res )
+        # tw.cls_broser()
+        time.sleep(1000000)
 if __name__ == '__main__':
     main()
